@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "843223155021",
+    "project_id": "firebase-esm1"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:843223155021:android:03a61ee6688ddd8b",
+        "android_client_info": {
+          "package_name": "com.example.cissy.esm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDIoN0r2gla6KXXPl9t-FvZfSDp-gHuK-4"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 2,
+          "analytics_property": {
+            "tracking_id": "UA-97818295-1"
+          }
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

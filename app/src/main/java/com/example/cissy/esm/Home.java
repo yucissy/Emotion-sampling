@@ -42,7 +42,7 @@ public class Home extends AppCompatActivity {
         SharedPreferences.Editor edit = prefs.edit();
         edit.putBoolean(getString(R.string.pref_previously_started), Boolean.TRUE);
         edit.commit();
-        edit.putString(getString(R.string.email), message);
+        edit.putString(getString(R.string.invite_code), message);
         edit.commit();
 
         startActivity(intent);

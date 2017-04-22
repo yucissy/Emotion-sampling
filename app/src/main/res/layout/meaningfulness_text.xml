@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:layout_margin="10dp"
+    android:background="@android:color/darker_gray"
+    android:orientation="vertical"
+    android:padding="0dp"
+    android:weightSum="1">
+
+
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scaleType="centerInside"
+        app:srcCompat="@drawable/logo" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_blue_light"
+        android:padding="20dp"
+        android:text="Why do you think it was this meaningful?"
+        android:textAlignment="center"
+        android:textColor="@android:color/black"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+
+    <EditText
+        android:id="@+id/editText"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_margin="10dp"
+        android:background="@android:color/white"
+        android:ems="10"
+        android:hint="Answer (75 character minimum)"
+        android:inputType="textPersonName"
+        android:padding="10dp"
+        android:textAlignment="viewStart"
+        android:layout_gravity="start"
+        android:textColor="@android:color/black"
+        android:textColorHint="@android:color/darker_gray"/>
+
+    <Button
+        android:id="@+id/btnSubmit"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginLeft="60dp"
+        android:layout_marginRight="60dp"
+        android:clickable="true"
+        android:gravity="center_vertical|right"
+        android:text="Submit"
+        android:textAlignment="center" />
+
+</LinearLayout>

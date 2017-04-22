@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">ESM</string>
     <string name="pref_previously_started">null</string>
-    <string name="email">email</string>
+    <string name="invite_code">code</string>
 </resources>
