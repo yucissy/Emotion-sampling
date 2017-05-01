@@ -48,7 +48,6 @@ public class HomeScreenActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home_screen);
 
         String email = PreferenceManager.getDefaultSharedPreferences(mContext).getString("email", "");
-        System.out.println(email);
     }
 
     private void showDialog(Context context) {
@@ -106,7 +105,9 @@ public class HomeScreenActivity extends AppCompatActivity {
                     android.os.Process.myUid(), mContext.getPackageName());
         }
         boolean granted = mode == AppOpsManager.MODE_ALLOWED;
-        checkDrawOverlayPermission();
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            checkDrawOverlayPermission();
+        }
 
         TextView headMessage = (TextView) findViewById(R.id.textView4);
         TextView subMessage = (TextView) findViewById(R.id.textView5);
@@ -115,7 +116,6 @@ public class HomeScreenActivity extends AppCompatActivity {
             subMessage.setText("This app will prompt you to record your emotions throughout the day. \n\nPlease keep notifications turned on while you are awake, and keep this app running in the background.");
 
             Intent intent = new Intent(mContext, DetectAppsService.class);
-            Log.d("c", "starting service");
             mContext.startService(intent);
 
         }

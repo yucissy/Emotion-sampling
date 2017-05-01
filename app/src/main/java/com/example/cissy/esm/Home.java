@@ -28,6 +28,7 @@ public class Home extends AppCompatActivity {
         else {
             Intent intent = new Intent(this, HomeScreenActivity.class);
             startActivity(intent);
+            finish();
         }
     }
 
@@ -46,5 +47,6 @@ public class Home extends AppCompatActivity {
         edit.commit();
 
         startActivity(intent);
+        finish();
     }
 }

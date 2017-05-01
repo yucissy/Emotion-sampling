@@ -30,21 +30,23 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
-
     <EditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
         android:layout_height="100dp"
+        android:layout_gravity="start"
         android:layout_margin="10dp"
         android:background="@android:color/white"
         android:ems="10"
+        android:gravity="top|left"
         android:hint="Answer (75 character minimum)"
-        android:inputType="textPersonName"
+        android:inputType="textMultiLine"
         android:padding="10dp"
+        android:scrollHorizontally="false"
+        android:singleLine="false"
         android:textAlignment="viewStart"
-        android:layout_gravity="start"
         android:textColor="@android:color/black"
-        android:textColorHint="@android:color/darker_gray"/>
+        android:textColorHint="@android:color/darker_gray" />
 
     <Button
         android:id="@+id/btnSubmit"
