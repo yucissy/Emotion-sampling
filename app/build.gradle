@@ -5,14 +5,14 @@ android {
         config {
             keyAlias 'alias_name'
             keyPassword 'headsUp7up'
-            storeFile file('C:/Users/Cissy/AndroidStudioProjects/ESM/my-release-key.keystore')
+            storeFile file('C:/Users/Cissy/ESM/my-release-key.keystore')
             storePassword 'headsUp7up'
         }
     }
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
     defaultConfig {
-        applicationId "com.example.cissy.esm"
+        applicationId "com.uw.hcde.esm"
         minSdkVersion 15
         targetSdkVersion 25
         versionCode 1

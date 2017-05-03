@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.example.cissy.esm.Home">
+    tools:context="com.uw.hcde.esm.Home">
 
     <ImageView
         android:id="@+id/imageView"
@@ -81,11 +81,9 @@
         android:id="@+id/editEmail"
         android:layout_width="110dp"
         android:layout_height="38dp"
-        android:layout_marginTop="0dp"
         android:background="@color/common_google_signin_btn_text_dark_disabled"
         android:inputType="number"
         android:maxLength="4"
-        app:layout_constraintHorizontal_bias="0.505"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView2"
@@ -101,15 +99,9 @@
         android:onClick="login"
         tools:layout_constraintTop_creator="1"
         tools:layout_constraintRight_creator="1"
-        android:layout_marginStart="134dp"
-        android:layout_marginEnd="134dp"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editEmail"
         tools:layout_constraintLeft_creator="1"
-        app:layout_constraintLeft_toLeftOf="parent"
-        android:layout_marginRight="8dp"
-        app:layout_constraintHorizontal_bias="0.562"
-        android:layout_marginTop="0dp"
-        android:layout_marginLeft="8dp" />
+        app:layout_constraintLeft_toLeftOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

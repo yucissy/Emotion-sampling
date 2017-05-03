@@ -1,4 +1,4 @@
-package com.example.cissy.esm;
+package com.uw.hcde.esm;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

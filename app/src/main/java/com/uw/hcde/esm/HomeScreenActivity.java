@@ -1,20 +1,19 @@
-package com.example.cissy.esm;
+package com.uw.hcde.esm;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
-import android.app.usage.UsageStats;
-import android.app.usage.UsageStatsManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
@@ -23,14 +22,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.UUID;
 
 public class HomeScreenActivity extends AppCompatActivity {
@@ -90,7 +83,6 @@ public class HomeScreenActivity extends AppCompatActivity {
                 android.provider.Settings.Secure.ANDROID_ID);
 
         UUID deviceUuid = new UUID(androidId.hashCode(), ((long)tmDevice.hashCode() << 32) | tmSerial.hashCode());
-        Log.d("C", deviceUuid.toString());
         return deviceUuid.toString();
     }
 
@@ -111,6 +103,11 @@ public class HomeScreenActivity extends AppCompatActivity {
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkDrawOverlayPermission();
             checkReadPhonePermission();
+        } else {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+            SharedPreferences.Editor edit = prefs.edit();
+            edit.putString(getString(R.string.device_id), this.setupUniqueID(this));
+            edit.commit();
         }
 
         TextView headMessage = (TextView) findViewById(R.id.textView4);
@@ -119,8 +116,9 @@ public class HomeScreenActivity extends AppCompatActivity {
             headMessage.setText("You're in the study!");
             subMessage.setText("This app will prompt you to record your emotions throughout the day. \n\nPlease keep notifications turned on while you are awake, and keep this app running in the background.");
 
-            Intent intent = new Intent(mContext, DetectAppsService.class);
-            mContext.startService(intent);
+            Intent intent = new Intent(this, DetectAppsService.class);
+            bindService(intent, mServerConn, Context.BIND_AUTO_CREATE);
+            startService(intent);
 
         }
         else {
@@ -172,4 +170,16 @@ public class HomeScreenActivity extends AppCompatActivity {
                 break;
         }
     }
+
+    protected ServiceConnection mServerConn = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            Log.d("C", "service connected");
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d("C", "service disconnected");
+        }
+    };
 }

@@ -1,20 +1,12 @@
-package com.example.cissy.esm;
+package com.uw.hcde.esm;
 
-import android.Manifest;
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
-
-import java.util.UUID;
 
 public class Home extends AppCompatActivity {
 

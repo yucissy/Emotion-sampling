@@ -1,10 +1,9 @@
-package com.example.cissy.esm;
+package com.uw.hcde.esm;
 
 import android.annotation.TargetApi;
-import android.app.IntentService;
+import android.app.Notification;
 import android.app.Service;
 import android.app.usage.UsageStats;
-import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,22 +11,18 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.PixelFormat;
-import android.os.AsyncTask;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.RadioGroup;
+import android.widget.Toast;
 
 import com.google.android.gms.analytics.HitBuilders;
 import com.google.android.gms.analytics.Tracker;
@@ -38,15 +33,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.UUID;
-
-import static java.security.AccessController.getContext;
 
 /**
  * Created by Cissy on 4/17/2017.
@@ -90,6 +80,7 @@ public class DetectAppsService extends Service {
     private MyLayout myLayout;
     private HomeWatcher mHomeWatcher;
     private Sample currentSample;
+    private static int FOREGROUND_ID=1338;
 
     @Override
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -139,10 +130,9 @@ public class DetectAppsService extends Service {
                 //TODO: Change these back after testing
                 //If user just opened a target app
                 if (!packageName.equals(lastApp)) {
-                    if (targetApps.contains(packageName)) {
-                        //System.currentTimeMillis() - lastSampledTime > 1800000
-                        //(getAppCategory(packageName) != lastAppCategory)
+                    if (targetApps.contains(packageName) && getAppCategory(packageName) != lastAppCategory && System.currentTimeMillis() - lastSampledTime > 1800000) {
 
+                        lastSampledTime = System.currentTimeMillis();
                         lastAppCategory = getAppCategory(packageName);
 
                         sample = Sample.getRandomSample(lastSample, packageName);
@@ -150,10 +140,8 @@ public class DetectAppsService extends Service {
                         lastSample = sample;
                         sampledApp = packageName;
                         sample.setPackageName(packageName);
-                        Log.d("c", "sample "+currentSample.getType());
 
                         if (sample.getType() == Sample.BEFORE) {
-                            lastSampledTime = System.currentTimeMillis();
                             sampled = true;
                             popupSample(sample);
                         }
@@ -177,7 +165,6 @@ public class DetectAppsService extends Service {
 
                             String currentApp = appChecker.getForegroundApp(getApplicationContext());
                             if (currentApp.equals(packageName) && sample.getType() == Sample.DURING && continuousUse){
-                                lastSampledTime = System.currentTimeMillis();
                                 sample.setSampleTime(waitPeriod);
                                 sampled = true;
                                 popupSample(sample);
@@ -189,7 +176,6 @@ public class DetectAppsService extends Service {
                                     sleep(1000);
                                     elapsed+=1000;
                                 }
-                                lastSampledTime = System.currentTimeMillis();
                                 sample.setSampleTime(elapsed+15000);
                                 sample.setAppEnd(elapsed);
                                 popupSample(sample);
@@ -202,7 +188,6 @@ public class DetectAppsService extends Service {
                     launchTime = System.currentTimeMillis();
                     if (!launcherApps.contains(lastApp)) {
                         if (sampled && sample.getType() != Sample.AFTER) {
-                            Log.d("c", "a sample app just closed");
                             Event event = sample.getEvent();
                             event.setDurationAfter(System.currentTimeMillis() - sample.getEndTime());
                             sendEvent(thisService, sample.getCategory(), sample.getPromptType(), event);
@@ -214,7 +199,6 @@ public class DetectAppsService extends Service {
                                     .durationTotal(duration)
                                     .build();
                             sendEvent(getService(), "non-sample", "non-sample", event);
-                            Log.d("c", "a normal app just closed");
                             sampled = false;
                         }
                     }
@@ -323,7 +307,7 @@ public class DetectAppsService extends Service {
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(service.getBaseContext());
         String code = prefs.getString(service.getString(R.string.invite_code), "NA");
-        UUID deviceID = UUID.fromString(prefs.getString(getString(R.string.device_id), "NA"));
+        UUID deviceID = UUID.fromString(prefs.getString(getString(R.string.device_id), new UUID(0L, 0L).toString()));
 
         event.setPID(code);
         event.setDeviceId(deviceID);
@@ -333,18 +317,18 @@ public class DetectAppsService extends Service {
                 event.setDurationTotal(event.getDurationBefore());
             }
             else {
-                System.out.println("duration before: "+event.getDurationBefore());
-                System.out.println("duration after: "+event.getDurationAfter());
-                long sum = event.getDurationAfter() + event.getDurationBefore();
+                long durationBefore = (event.getDurationBefore() >= 0) ? event.getDurationBefore() : 0;
+                long durationAfter = (event.getDurationAfter() >= 0) ? event.getDurationAfter() : 0;
+                long sum = durationAfter + durationBefore;
                 event.setDurationTotal(sum);
             }
         }
-        System.out.println(event.toString());
-//        mTracker.send(new HitBuilders.EventBuilder()
-//                .setCategory(category)
-//                .setAction(action)
-//                .setLabel(event.toString())
-//                .build());
+        Log.d("c", event.toString());
+        mTracker.send(new HitBuilders.EventBuilder()
+                .setCategory(category)
+                .setAction(action)
+                .setLabel(event.toString())
+                .build());
     }
 
     public static String getAppCategory(String packageName) {
@@ -363,5 +347,24 @@ public class DetectAppsService extends Service {
         else {
             return "unknown";
         }
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Toast.makeText(this, "Service Started!", Toast.LENGTH_SHORT).show();
+        startForeground(FOREGROUND_ID, buildForegroundNotification());
+        return START_STICKY;
+    }
+
+    private Notification buildForegroundNotification() {
+        NotificationCompat.Builder b=new NotificationCompat.Builder(this);
+
+        b.setOngoing(true)
+                .setContentTitle("starting")
+                .setContentText("service")
+                .setSmallIcon(android.R.drawable.stat_sys_download)
+                .setTicker("starting");
+
+        return(b.build());
     }
 }
