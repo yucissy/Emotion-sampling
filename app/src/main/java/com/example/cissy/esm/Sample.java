@@ -33,14 +33,25 @@ public class Sample {
     private int sampleTime = 0;
     private String packageName;
     private String promptType;
+    private long sampleStartTime;
+    private long sampleEndTime;
+    private final Event event;
 
-    public Sample(int type) {
+    public Sample(int type, String appName) {
         this.type = type;
+        this.event = new Event.EventBuilder(1, System.currentTimeMillis(), DetectAppsService.getLocalDateTime(), appName)
+                .category(DetectAppsService.getAppCategory(appName))
+                .timing(this.getCategory())
+                .build();
     }
 
     public int getType() {
         return this.type;
     }
+
+    public Event getEvent() { return this.event; }
+
+    public long getEndTime() { return this.sampleEndTime; }
 
     public String getCategory() {
         int type = this.getType();
@@ -68,7 +79,7 @@ public class Sample {
 
     public int getSampleTime() { return this.sampleTime; }
 
-    public static Sample getRandomSample(Sample lastSample) {
+    public static Sample getRandomSample(Sample lastSample, String appName) {
 
         List<Integer> sampleTypes = Arrays.asList(Sample.BEFORE, Sample.DURING, Sample.AFTER);
         int lastSampleType = 3;
@@ -83,7 +94,7 @@ public class Sample {
             selectedType = sampleTypes.get(randomizer.nextInt(sampleTypes.size()));
         }
 
-        return new Sample(selectedType);
+        return new Sample(selectedType, appName);
     }
 
     public View getPopup(final DetectAppsService service) {
@@ -92,6 +103,7 @@ public class Sample {
         final LinearLayout popup = (LinearLayout) li.inflate(R.layout.affect_before, null);
         TextView prompt = (TextView) popup.findViewById(R.id.textView);
         final SpannableStringBuilder str;
+        this.sampleStartTime = System.currentTimeMillis();
 
         switch (this.getType()) {
             case BEFORE:
@@ -129,16 +141,21 @@ public class Sample {
                 int idx2 = eGroup.indexOfChild(radioButton2);
 
                 if (idx >= 0 && idx2 >= 0) {
-                    Event event = new Event.EventBuilder(1, System.currentTimeMillis(), thisSample.getPackageName())
-                            .valence(Integer.toString(idx))
-                            .arousal(Integer.toString(idx2))
-                            .durationBefore(thisSample.getSampleTime())
-                            .build();
+//                    event = new Event.EventBuilder(1, System.currentTimeMillis(), thisSample.getPackageName())
+//                            .valence(Integer.toString(idx))
+//                            .arousal(Integer.toString(idx2))
+//                            .category(DetectAppsService.getAppCategory(thisSample.getPackageName()))
+//                            .timing(thisSample.getCategory())
+//                            .durationBefore(thisSample.getSampleTime())
+//                            .build();
+                    event.setValence(Integer.toString(idx));
+                    event.setArousal(Integer.toString(idx2));
+                    event.setDurationBefore(thisSample.getSampleTime());
                     //DetectAppsService.sendEvent(service, thisSample.getCategory(), "affect_scale", event);
                     service.removeView(popup);
 
                     Random rand = new Random();
-                    int n = rand.nextInt(4);
+                    int n = rand.nextInt(10);
                     if (n == 0) {
                         final View followUp = thisSample.getFollowUp(service);
                         final EditText answer = (EditText) followUp.findViewById(R.id.editText);
@@ -151,27 +168,16 @@ public class Sample {
                             @Override
                             public void onClick(View v) {
                                 String response = answer.getText().toString();
+                                event.setAffectText(response);
                                 if (response.length() >= 75) {
                                     //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";response="+answer.getText()+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
                                     service.removeView(followUp);
-                                    if (thisSample.getType() == Sample.AFTER) {
-                                        final View followUp = thisSample.getMeaningfulnessLikert(service);
-                                        service.addView(followUp);
-                                        thisSample.setPromptType("meaningfulness_scale");
-                                    }
-                                    else {
-                                        final View followUp = thisSample.getPurpose(service);
-                                        service.addView(followUp);
-                                        thisSample.setPromptType("purpose_mc");
-                                    }
+                                    final View followUp = thisSample.getPurpose(service);
+                                    service.addView(followUp);
+                                    thisSample.setPromptType("purpose_mc");
                                 }
                             }
                         });
-                    }
-                    else if (thisSample.getType() == Sample.AFTER) {
-                        final View followUp = thisSample.getMeaningfulnessLikert(service);
-                        service.addView(followUp);
-                        thisSample.setPromptType("meaningfulness_scale");
                     }
                     else {
                         final View followUp = thisSample.getPurpose(service);
@@ -223,11 +229,22 @@ public class Sample {
 
                 //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";purpose="+purpose+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
                 service.removeView(popup);
+                event.setPurpose(purpose);
 
                 if (purpose.equals("Communicating / interacting")) {
                     final View closenessFollowUp = thisSample.getCloseness(service);
                     service.addView(closenessFollowUp);
                     thisSample.setPromptType("closeness_scale");
+                }
+                else if (thisSample.getType() == Sample.AFTER) {
+                    final View meaningfulnessFollowUp = thisSample.getMeaningfulnessLikert(service);
+                    service.addView(meaningfulnessFollowUp);
+                    thisSample.setPromptType("meaningfulness_scale");
+                }
+                else {
+                    sampleEndTime = System.currentTimeMillis();
+                    event.setSampleDuration(sampleEndTime - sampleStartTime);
+                    sendSelfEvent(service);
                 }
             }
         });
@@ -248,7 +265,18 @@ public class Sample {
                 RadioButton radioButton = (RadioButton) mGroup.findViewById(checkedM);
                 int idx = mGroup.indexOfChild(radioButton);
                 //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";closeness="+idx+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
+                event.setCloseness(Integer.toString(idx));
                 service.removeView(popup);
+                if (thisSample.getType() == Sample.AFTER) {
+                    final View meaningfulnessFollowUp = thisSample.getMeaningfulnessLikert(service);
+                    service.addView(meaningfulnessFollowUp);
+                    thisSample.setPromptType("meaningfulness_scale");
+                }
+                else {
+                    sampleEndTime = System.currentTimeMillis();
+                    event.setSampleDuration(sampleEndTime - sampleStartTime);
+                    sendSelfEvent(service);
+                }
             }
         });
         return popup;
@@ -272,11 +300,12 @@ public class Sample {
                 View radioButton = mGroup.findViewById(checkedM);
                 int idx = mGroup.indexOfChild(radioButton);
                 //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";meaningfulness="+idx+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
+                event.setMeaningfulness(Integer.toString(idx));
 
                 service.removeView(popup);
                 Random rand = new Random();
-                int n = rand.nextInt(2);
-                if (n == 0) {
+                int n = rand.nextInt(100);
+                if (n <= 35) {
                     final View followUp = thisSample.getMeaningfulnessText(service);
                     final EditText answer = (EditText) followUp.findViewById(R.id.editText);
 
@@ -291,12 +320,18 @@ public class Sample {
                             if (response.length() >= 75) {
                                 //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";response="+answer.getText()+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
                                 service.removeView(followUp);
-                                final View followUp = thisSample.getPurpose(service);
-                                service.addView(followUp);
-                                thisSample.setPromptType("purpose_mc");
+                                event.setMeaningfulnessText(response);
+                                sampleEndTime = System.currentTimeMillis();
+                                event.setSampleDuration(sampleEndTime - sampleStartTime);
+                                sendSelfEvent(service);
                             }
                         }
                     });
+                }
+                else {
+                    sampleEndTime = System.currentTimeMillis();
+                    event.setSampleDuration(sampleEndTime - sampleStartTime);
+                    sendSelfEvent(service);
                 }
             }
         });
@@ -310,7 +345,44 @@ public class Sample {
         return popup;
     }
 
-    public void closePopup() {
+    private void sendSelfEvent(DetectAppsService service) {
+        if (this.getType() == AFTER) {
+            service.sendEvent(service, this.getCategory(), this.getPromptType(), this.event);
+        }
+    }
 
+    public void setAppEnd(long duration) {
+        if (this.getType() == Sample.AFTER) {
+            event.setDurationTotal(duration);
+        }
+    }
+
+    public void cancel() {
+        String none = "NO_RESPONSE";
+        sampleEndTime = System.currentTimeMillis();
+        event.setSampleDuration(sampleEndTime - sampleStartTime);
+        switch (this.getPromptType()) {
+            case "affect_scale":
+                event.setValence(none);
+                event.setArousal(none);
+                break;
+            case "affect_text":
+                event.setAffectText(none);
+                break;
+            case "purpose_mc":
+                event.setPurpose(none);
+                break;
+            case "closeness_scale":
+                event.setCloseness(none);
+                break;
+            case "meaningfulness_scale":
+                event.setMeaningfulness(none);
+                break;
+            case "meaningfulness_text":
+                event.setMeaningfulnessText(none);
+                break;
+            default:
+                break;
+        }
     }
 }

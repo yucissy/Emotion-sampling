@@ -12,6 +12,7 @@ public class Event {
     private String PID;
     private UUID deviceId;
     private long timeStamp;
+    private String localTime;
     private String app;
     private String category;
     private String timing;
@@ -32,6 +33,7 @@ public class Event {
         this.PID = builder.PID;
         this.deviceId = builder.deviceId;
         this.timeStamp = builder.timeStamp;
+        this.localTime = builder.localTime;
         this.app = builder.app;
         this.category = builder.category;
         this.timing = builder.timing;
@@ -48,6 +50,16 @@ public class Event {
         this.meaningfulnessText = builder.meaningfulnessText;
     }
 
+    public long getDurationBefore() { return this.durationBefore; }
+
+    public long getDurationAfter() { return this.durationAfter; }
+
+    public void setDurationBefore(long durationBefore) { this.durationBefore = durationBefore; }
+
+    public void setValence(String valence) { this.valence = valence; }
+
+    public void setArousal(String arousal) { this.arousal = arousal; }
+
     public void setPID(String PID) {
         this.PID = PID;
     }
@@ -55,6 +67,22 @@ public class Event {
     public void setDeviceId(UUID deviceId) {
         this.deviceId = deviceId;
     }
+
+    public void setAffectText(String affectText) { this.affectText = affectText; }
+
+    public void setMeaningfulness(String meaningfulness) { this.meaningfulness = meaningfulness; }
+
+    public void setMeaningfulnessText(String meaningfulnessText) { this.meaningfulnessText = meaningfulnessText; }
+
+    public void setCloseness(String closeness) { this.closeness = closeness; }
+
+    public void setPurpose(String purpose) { this.purpose = purpose; }
+
+    public void setDurationAfter(long durationAfter) { this.durationAfter = durationAfter; }
+
+    public void setSampleDuration(long sampleDuration) { this.sampleDuration = sampleDuration; }
+
+    public void setDurationTotal(long durationTotal) { this.durationTotal = durationTotal; }
 
     @Override
     public String toString() {
@@ -64,6 +92,7 @@ public class Event {
         result += ";PID=" + ((this.PID == null) ? "NA" : this.PID);
         result += ";device_ID=" + ((this.deviceId == null) ? "NA" : this.deviceId);
         result += ";timestamp=" + ((this.timeStamp == -1) ? "NA" : this.timeStamp);
+        result += ";localtime=" + ((this.localTime == null) ? "NA" : this.localTime);
         result += ";app=" + ((this.app == null) ? "NA" : this.app);
         result += ";category=" + ((this.category == null) ? "NA" : this.category);
         result += ";timing=" + ((this.timing == null) ? "NA" : this.timing);
@@ -89,6 +118,7 @@ public class Event {
         protected String PID;
         protected UUID deviceId;
         protected long timeStamp;
+        protected String localTime;
         protected String app;
         protected String category;
         protected String timing;
@@ -104,10 +134,11 @@ public class Event {
         protected String meaningfulness;
         protected String meaningfulnessText;
 
-        public EventBuilder(int type, long timeStamp, String app) {
+        public EventBuilder(int type, long timeStamp, String localTime, String app) {
             this.type = type;
             this.timeStamp = timeStamp;
             this.app = app;
+            this.localTime = localTime;
         }
 
         public EventBuilder category(String category) {

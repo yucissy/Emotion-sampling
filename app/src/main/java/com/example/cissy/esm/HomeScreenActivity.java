@@ -18,6 +18,7 @@ import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.telephony.TelephonyManager;
@@ -38,6 +39,7 @@ public class HomeScreenActivity extends AppCompatActivity {
     Context mContext;
     /** code to post/handler request for permission */
     public final static int REQUEST_CODE = 5463;
+    private final static int REQUEST_READ_PHONE_STATE = 1234;
 
 
     @Override
@@ -77,17 +79,18 @@ public class HomeScreenActivity extends AppCompatActivity {
     }
 
     // Construct unique device ID
-    private static String setupUniqueID(Context context, String email) {
+    private static String setupUniqueID(Context context) {
         final TelephonyManager tm = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
 
         final String tmDevice, tmSerial, androidId;
-        tmDevice = "" + email;
+        tmDevice = "" + tm.getDeviceId();
         tmSerial = "" + tm.getSimSerialNumber();
         androidId = "" + android.provider.Settings.Secure.getString(
                 context.getContentResolver(),
                 android.provider.Settings.Secure.ANDROID_ID);
 
         UUID deviceUuid = new UUID(androidId.hashCode(), ((long)tmDevice.hashCode() << 32) | tmSerial.hashCode());
+        Log.d("C", deviceUuid.toString());
         return deviceUuid.toString();
     }
 
@@ -107,6 +110,7 @@ public class HomeScreenActivity extends AppCompatActivity {
         boolean granted = mode == AppOpsManager.MODE_ALLOWED;
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkDrawOverlayPermission();
+            checkReadPhonePermission();
         }
 
         TextView headMessage = (TextView) findViewById(R.id.textView4);
@@ -135,6 +139,37 @@ public class HomeScreenActivity extends AppCompatActivity {
                     Uri.parse("package:" + getPackageName()));
             /** request permission via start activity for result */
             startActivityForResult(intent, REQUEST_CODE);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private void checkReadPhonePermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE);
+
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_PHONE_STATE}, REQUEST_READ_PHONE_STATE);
+        } else {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+            SharedPreferences.Editor edit = prefs.edit();
+            edit.putString(getString(R.string.device_id), this.setupUniqueID(this));
+            edit.commit();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_READ_PHONE_STATE:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+                    SharedPreferences.Editor edit = prefs.edit();
+                    edit.putString(getString(R.string.device_id), this.setupUniqueID(this));
+                    edit.commit();
+                }
+                break;
+
+            default:
+                break;
         }
     }
 }
