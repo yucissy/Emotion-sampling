@@ -66,6 +66,7 @@ public class DetectAppsService extends Service {
             "com.king.candycrushsaga", "com.zynga.words", "com.nintendo.zara", "com.reddit.frontpage", "com.amazon.avod.thirdpartyclient",
             "com.directv.dvrscheduler", "tv.twitch.android.app", "com.hulu.plus", "com.imgur.mobile");
     private static final List<String> launcherApps = new ArrayList();
+    private static DetectAppsService instance;
 
 
     @Override
@@ -82,10 +83,16 @@ public class DetectAppsService extends Service {
     private Sample currentSample;
     private static int FOREGROUND_ID=1338;
 
+    public static boolean isInstanceCreated() {
+        return instance != null;
+    }
+
     @Override
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public void onCreate() {
         super.onCreate();
+
+        instance = this;
 
         final DetectAppsService thisService = this;
         mHomeWatcher = new HomeWatcher(this);
@@ -130,12 +137,15 @@ public class DetectAppsService extends Service {
                 //TODO: Change these back after testing
                 //If user just opened a target app
                 if (!packageName.equals(lastApp)) {
-                    if (targetApps.contains(packageName) && getAppCategory(packageName) != lastAppCategory && System.currentTimeMillis() - lastSampledTime > 1800000) {
+                    if (targetApps.contains(packageName) && getAppCategory(packageName) != lastAppCategory) {
+                        //&& System.currentTimeMillis() - lastSampledTime > 1800000
 
                         lastSampledTime = System.currentTimeMillis();
                         lastAppCategory = getAppCategory(packageName);
 
-                        sample = Sample.getRandomSample(lastSample, packageName);
+                        //sample = Sample.getRandomSample(lastSample, packageName);
+                        sample = new Sample(Sample.BEFORE, packageName);
+                        Log.d("c", "sampled: "+sample.getType());
                         currentSample = sample;
                         lastSample = sample;
                         sampledApp = packageName;
@@ -248,10 +258,10 @@ public class DetectAppsService extends Service {
     public void hide(boolean cancelled) {
         if (cancelled) {
             currentSample.cancel();
+            Sample.showFinalToast(this);
             if (currentSample.getType() == Sample.AFTER) {
                 sendEvent(this, currentSample.getCategory(), currentSample.getPromptType(), currentSample.getEvent());
             }
-            //sendEvent(this, currentSample.getCategory(), currentSample.getPromptType(), currentSample.getEvent());
         }
         if (myLayout != null) {
             wm.removeView(myLayout);
@@ -351,6 +361,7 @@ public class DetectAppsService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d("C", "STARTING SERVICE");
         Toast.makeText(this, "Service Started!", Toast.LENGTH_SHORT).show();
         startForeground(FOREGROUND_ID, buildForegroundNotification());
         return START_STICKY;
@@ -360,11 +371,17 @@ public class DetectAppsService extends Service {
         NotificationCompat.Builder b=new NotificationCompat.Builder(this);
 
         b.setOngoing(true)
-                .setContentTitle("starting")
-                .setContentText("service")
-                .setSmallIcon(android.R.drawable.stat_sys_download)
-                .setTicker("starting");
+                .setContentTitle("service active")
+                .setContentText("RightNow - UW study")
+                .setSmallIcon(R.drawable.logo)
+                .setTicker("active");
 
         return(b.build());
+    }
+
+    @Override
+    public void onDestroy() {
+        instance = null;
+        stopForeground(true);
     }
 }

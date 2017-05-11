@@ -5,24 +5,31 @@
     android:layout_height="wrap_content"
     android:layout_alignParentBottom="true"
     android:layout_margin="10dp"
-    android:background="@android:color/darker_gray"
+    android:background="@android:color/white"
     android:orientation="vertical"
     android:padding="0dp"
     android:weightSum="1">
 
 
-    <ImageView
-        android:id="@+id/imageView3"
+    <TextView
+        android:id="@+id/captionView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scaleType="centerInside"
-        app:srcCompat="@drawable/logo" />
+        android:background="#AED1FF"
+        android:paddingLeft="10dp"
+        android:paddingTop="10dp"
+        android:text="RightNow - UW Study"
+        android:textAlignment="textStart"
+        android:gravity="start"
+        android:textColor="@android:color/black"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@android:color/holo_blue_light"
+        android:background="#AED1FF"
         android:padding="20dp"
         android:text="Why do you think it was this meaningful?"
         android:textAlignment="center"

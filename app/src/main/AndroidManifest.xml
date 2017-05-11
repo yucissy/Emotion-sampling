@@ -20,8 +20,8 @@
 
     <application
         android:name="com.uw.hcde.esm.AnalyticsApplication"
-        android:versionCode="1"
-        android:versionName="1"
+        android:versionCode="2"
+        android:versionName="1.1"
         android:launchMode="singleTop"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

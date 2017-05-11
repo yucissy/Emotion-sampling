@@ -1,5 +1,6 @@
 package com.uw.hcde.esm;
 
+import android.app.Service;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.text.Spannable;
@@ -12,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.List;
@@ -239,7 +241,7 @@ public class Sample {
                 else {
                     sampleEndTime = System.currentTimeMillis();
                     event.setSampleDuration(sampleEndTime - sampleStartTime);
-                    sendSelfEvent(service);
+                    endPrompts(service);
                 }
             }
         });
@@ -270,7 +272,7 @@ public class Sample {
                 else {
                     sampleEndTime = System.currentTimeMillis();
                     event.setSampleDuration(sampleEndTime - sampleStartTime);
-                    sendSelfEvent(service);
+                    endPrompts(service);
                 }
             }
         });
@@ -318,7 +320,7 @@ public class Sample {
                                 event.setMeaningfulnessText(response);
                                 sampleEndTime = System.currentTimeMillis();
                                 event.setSampleDuration(sampleEndTime - sampleStartTime);
-                                sendSelfEvent(service);
+                                endPrompts(service);
                             }
                         }
                     });
@@ -326,7 +328,7 @@ public class Sample {
                 else {
                     sampleEndTime = System.currentTimeMillis();
                     event.setSampleDuration(sampleEndTime - sampleStartTime);
-                    sendSelfEvent(service);
+                    endPrompts(service);
                 }
             }
         });
@@ -340,7 +342,8 @@ public class Sample {
         return popup;
     }
 
-    private void sendSelfEvent(DetectAppsService service) {
+    private void endPrompts(DetectAppsService service) {
+        this.showFinalToast(service);
         if (this.getType() == AFTER) {
             service.sendEvent(service, this.getCategory(), this.getPromptType(), this.event);
         }
@@ -350,6 +353,14 @@ public class Sample {
         if (this.getType() == Sample.AFTER) {
             event.setDurationTotal(duration);
         }
+    }
+
+    public static void showFinalToast(Service service) {
+        CharSequence text = "Your response was recorded";
+        int duration = Toast.LENGTH_SHORT;
+
+        Toast toast = Toast.makeText(service, text, duration);
+        toast.show();
     }
 
     public void cancel() {

@@ -116,10 +116,10 @@ public class HomeScreenActivity extends AppCompatActivity {
             headMessage.setText("You're in the study!");
             subMessage.setText("This app will prompt you to record your emotions throughout the day. \n\nPlease keep notifications turned on while you are awake, and keep this app running in the background.");
 
-            Intent intent = new Intent(this, DetectAppsService.class);
-            bindService(intent, mServerConn, Context.BIND_AUTO_CREATE);
-            startService(intent);
-
+            if (!DetectAppsService.isInstanceCreated()) {
+                Intent intent = new Intent(this, DetectAppsService.class);
+                startService(intent);
+            }
         }
         else {
             headMessage.setText("Your permission is required.");

@@ -5,24 +5,30 @@
     android:layout_height="wrap_content"
     android:layout_alignParentBottom="true"
     android:layout_margin="10dp"
-    android:background="@android:color/darker_gray"
+    android:background="@android:color/white"
     android:orientation="vertical"
     android:padding="0dp"
     android:weightSum="1">
 
-
-    <ImageView
-        android:id="@+id/imageView3"
+    <TextView
+        android:id="@+id/captionView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scaleType="centerInside"
-        app:srcCompat="@drawable/logo" />
+        android:background="#AED1FF"
+        android:paddingLeft="10dp"
+        android:paddingTop="10dp"
+        android:text="RightNow - UW Study"
+        android:textAlignment="textStart"
+        android:gravity="start"
+        android:textColor="@android:color/black"
+        android:textSize="12sp"
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@android:color/holo_blue_light"
+        android:background="#AED1FF"
         android:padding="20dp"
         android:text="How meaningful was using XXX just now?"
         android:textAlignment="center"
@@ -30,86 +36,88 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
-    <RadioGroup
-        android:id="@+id/meaning_group"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="62dp"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_centerInParent="true"
-        android:orientation="horizontal"
-        android:paddingLeft="10dp"
-        android:paddingTop="20dp">
+        android:layout_height="wrap_content"
+        android:gravity="center">
 
-
-        <RadioButton
-            android:id="@+id/radio_v1"
+        <RadioGroup
+            android:id="@+id/meaning_group"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="8dp" />
+            android:layout_height="62dp"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_centerInParent="true"
+            android:orientation="horizontal"
+            android:paddingTop="20dp">
 
-        <RadioButton
-            android:id="@+id/radio_v2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="8dp" />
+            <RadioButton
+                android:id="@+id/radio_v1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
 
-        <RadioButton
-            android:id="@+id/radio_v3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="8dp" />
+            <RadioButton
+                android:id="@+id/radio_v2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
 
-        <RadioButton
-            android:id="@+id/radio_v4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/textView_v2"
-            android:gravity="center"
-            android:padding="8dp" />
+            <RadioButton
+                android:id="@+id/radio_v3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
 
-        <RadioButton
-            android:id="@+id/radio_v5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="8dp" />
+            <RadioButton
+                android:id="@+id/radio_v4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/textView_v2"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
 
-        <RadioButton
-            android:id="@+id/radio_v6"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="8dp" />
+            <RadioButton
+                android:id="@+id/radio_v5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
 
-        <RadioButton
-            android:id="@+id/radio_v7"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="8dp" />
+            <RadioButton
+                android:id="@+id/radio_v6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
 
-    </RadioGroup>
+            <RadioButton
+                android:id="@+id/radio_v7"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black"
+                android:gravity="center"
+                android:padding="8dp" />
+
+        </RadioGroup>
+
+    </LinearLayout>
 
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-
-        <TextView
-            android:id="@+id/editText2"
-            android:layout_width="83dp"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/radio_v1"
-            android:ems="10"
-            android:layout_weight="1"
-            android:paddingBottom="10dp"
-            android:paddingLeft="10dp"
-            android:text="Not at all"
-            android:textSize="14sp" />
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="10dp">
 
         <TextView
             android:id="@+id/textView_v2"
@@ -117,21 +125,12 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/radio_v4"
             android:layout_weight="0"
+            android:gravity="center"
             android:maxLines="1"
-            android:paddingLeft="60dp"
-            android:text="Neutral" />
+            android:text="Not at all                       Neutral         Very Meaningful"
+            android:textColor="@android:color/black" />
 
-        <TextView
-            android:id="@+id/textView_v3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/radio_v7"
-            android:layout_weight="0"
-            android:maxLines="1"
-            android:paddingLeft="70dp"
-            android:text="Very Meaningful" />
     </LinearLayout>
-
 
 
     <View
@@ -139,7 +138,7 @@
         android:layout_width="match_parent"
         android:layout_height="20dp"
         android:layout_alignParentTop="true"
-        android:background="@android:color/holo_blue_light"
+        android:background="#AED1FF"
         android:visibility="visible" />
 
     <Button

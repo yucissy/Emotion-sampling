@@ -104,7 +104,7 @@ public class Event {
         result += ";arousal=" + ((this.arousal == null) ? "NA" : this.arousal);
         result += ";affect_text=" + ((this.affectText == null) ? "NA" : this.affectText);
         result += ";purpose=" + ((this.purpose == null) ? "NA" : this.purpose);
-        result += ";closness=" + ((this.closeness == null) ? "NA" : this.closeness);
+        result += ";closeness=" + ((this.closeness == null) ? "NA" : this.closeness);
         result += ";meaningfulness=" + ((this.meaningfulness == null) ? "NA" : this.meaningfulness);
         result += ";meaningfulness_text=" + ((this.meaningfulnessText == null) ? "NA" : this.meaningfulnessText);
 
