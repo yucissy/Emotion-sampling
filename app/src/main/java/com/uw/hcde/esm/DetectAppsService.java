@@ -137,14 +137,12 @@ public class DetectAppsService extends Service {
                 //TODO: Change these back after testing
                 //If user just opened a target app
                 if (!packageName.equals(lastApp)) {
-                    if (targetApps.contains(packageName) && getAppCategory(packageName) != lastAppCategory) {
-                        //&& System.currentTimeMillis() - lastSampledTime > 1800000
+                    if (targetApps.contains(packageName) && getAppCategory(packageName) != lastAppCategory && System.currentTimeMillis() - lastSampledTime > 1800000) {
 
                         lastSampledTime = System.currentTimeMillis();
                         lastAppCategory = getAppCategory(packageName);
 
-                        //sample = Sample.getRandomSample(lastSample, packageName);
-                        sample = new Sample(Sample.BEFORE, packageName);
+                        sample = Sample.getRandomSample(lastSample, packageName);
                         Log.d("c", "sampled: "+sample.getType());
                         currentSample = sample;
                         lastSample = sample;
@@ -361,9 +359,10 @@ public class DetectAppsService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
         Log.d("C", "STARTING SERVICE");
         Toast.makeText(this, "Service Started!", Toast.LENGTH_SHORT).show();
-        startForeground(FOREGROUND_ID, buildForegroundNotification());
+        //startForeground(FOREGROUND_ID, buildForegroundNotification());
         return START_STICKY;
     }
 
@@ -381,7 +380,11 @@ public class DetectAppsService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d("c", "service destroyed");
+        super.onDestroy();
         instance = null;
         stopForeground(true);
+        Intent broadcastIntent = new Intent("RestartSensor");
+        sendBroadcast(broadcastIntent);
     }
 }

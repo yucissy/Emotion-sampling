@@ -2,6 +2,7 @@ package com.uw.hcde.esm;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
 import android.content.ComponentName;
@@ -33,6 +34,8 @@ public class HomeScreenActivity extends AppCompatActivity {
     /** code to post/handler request for permission */
     public final static int REQUEST_CODE = 5463;
     private final static int REQUEST_READ_PHONE_STATE = 1234;
+    Intent mServiceIntent;
+    private DetectAppsService mDetectAppsService;
 
 
     @Override
@@ -116,9 +119,10 @@ public class HomeScreenActivity extends AppCompatActivity {
             headMessage.setText("You're in the study!");
             subMessage.setText("This app will prompt you to record your emotions throughout the day. \n\nPlease keep notifications turned on while you are awake, and keep this app running in the background.");
 
-            if (!DetectAppsService.isInstanceCreated()) {
-                Intent intent = new Intent(this, DetectAppsService.class);
-                startService(intent);
+            mDetectAppsService = new DetectAppsService();
+            mServiceIntent = new Intent(this, DetectAppsService.class);
+            if (!isMyServiceRunning(mDetectAppsService.getClass())) {
+                startService(mServiceIntent);
             }
         }
         else {
@@ -126,6 +130,18 @@ public class HomeScreenActivity extends AppCompatActivity {
             subMessage.setText("To participate in this study, you must turn on usage data access in your settings. \n\nOn most devices, this is found under: Settings > Security > Usage data access ");
             showDialog(this);
         }
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                Log.i ("isMyServiceRunning?", true+"");
+                return true;
+            }
+        }
+        Log.i ("isMyServiceRunning?", false+"");
+        return false;
     }
 
     @TargetApi(Build.VERSION_CODES.M)

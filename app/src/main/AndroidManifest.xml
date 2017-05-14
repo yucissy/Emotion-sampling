@@ -37,11 +37,23 @@
             </intent-filter>
         </activity>
         <activity android:name="com.uw.hcde.esm.HomeScreenActivity"></activity>
-        <service android:name="com.uw.hcde.esm.DetectAppsService"></service>
+        <service android:name="com.uw.hcde.esm.DetectAppsService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":ServiceProcess" ></service>
         <receiver android:name="com.uw.hcde.esm.BootCompletedIntentReceiver">
             <intent-filter>
                 <action android:name="com.android.techtrainner" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name=".SensorRestarterBroadcastReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:label="RestartServiceWhenStopped">
+            <intent-filter>
+                <action android:name="RestartSensor"/>
             </intent-filter>
         </receiver>
     </application>
