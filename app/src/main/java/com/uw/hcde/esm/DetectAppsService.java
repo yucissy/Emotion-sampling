@@ -1,13 +1,16 @@
 package com.uw.hcde.esm;
 
 import android.annotation.TargetApi;
+import android.app.AlarmManager;
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.app.usage.UsageStats;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.PixelFormat;
@@ -15,10 +18,12 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
@@ -34,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -44,27 +50,6 @@ import java.util.UUID;
 
 public class DetectAppsService extends Service {
 
-    private static final List<String> targetApps = Arrays.asList("com.facebook.katana", "com.whatsapp",
-            "com.snapchat.android", "com.facebook.orca", "com.instagram.android", "com.google.android.gm",
-            "com.microsoft.office.outlook", "me.bluemail.mail", "com.google.android.apps.inbox", "com.android.email",
-            "com.tinder", "com.linkedin.android", "com.ftw_and_co.happn","com.yik.yak", "com.okcupid.okcupid", "com.bumble.app", "com.android.chrome",
-            "com.google.android.googlequicksearchbox", "com.cnn.mobile.android.phone", "com.twitter.android",
-            "com.google.android.apps.genie.geniewidget","com.google.android.apps.magazines",
-            "com.foxnews.android", "com.netflix.mediaclient","com.google.android.youtube",
-            "com.king.candycrushsaga", "com.zynga.words", "com.nintendo.zara", "com.reddit.frontpage", "com.amazon.avod.thirdpartyclient",
-            "com.directv.dvrscheduler", "tv.twitch.android.app", "com.hulu.plus", "com.imgur.mobile");
-    private static final List<String> familyFriendsApps = Arrays.asList("com.facebook.katana", "com.whatsapp",
-            "com.snapchat.android", "com.facebook.orca", "com.instagram.android", "com.google.android.gm",
-            "com.microsoft.office.outlook", "me.bluemail.mail", "com.google.android.apps.inbox", "com.android.email");
-    private static final List<String> meetingPeopleApps = Arrays.asList("com.tinder", "com.linkedin.android",
-            "com.ftw_and_co.happn","com.yik.yak", "com.okcupid.okcupid", "com.bumble.app");
-    private static final List<String> informationSeekingApps = Arrays.asList("com.android.chrome",
-            "com.google.android.googlequicksearchbox", "com.cnn.mobile.android.phone", "com.twitter.android",
-            "com.google.android.apps.genie.geniewidget","com.google.android.apps.magazines",
-            "com.foxnews.android");
-    private static final List<String> entertainmentApps = Arrays.asList("com.netflix.mediaclient","com.google.android.youtube",
-            "com.king.candycrushsaga", "com.zynga.words", "com.nintendo.zara", "com.reddit.frontpage", "com.amazon.avod.thirdpartyclient",
-            "com.directv.dvrscheduler", "tv.twitch.android.app", "com.hulu.plus", "com.imgur.mobile");
     private static final List<String> launcherApps = new ArrayList();
     private static DetectAppsService instance;
 
@@ -81,7 +66,13 @@ public class DetectAppsService extends Service {
     private MyLayout myLayout;
     private HomeWatcher mHomeWatcher;
     private Sample currentSample;
-    private static int FOREGROUND_ID=1338;
+    private static int FOREGROUND_ID=16;
+    private int lastSampleType;
+    private boolean cancelPrompt;
+    private Handler cancelPromptHandler;
+    private cancelPromptCommand cancelPromptRunnable;
+    private List<String> installedApps;
+    private List<String> pastSamples;
 
     public static boolean isInstanceCreated() {
         return instance != null;
@@ -106,6 +97,8 @@ public class DetectAppsService extends Service {
             }
         });
 
+        setAlarmManager();
+
         PackageManager pm = getPackageManager();
         Intent i = new Intent(Intent.ACTION_MAIN);
         i.addCategory(Intent.CATEGORY_HOME);
@@ -114,6 +107,10 @@ public class DetectAppsService extends Service {
             launcherApps.add(resolveInfo.activityInfo.packageName.toString());
         }
 
+        pastSamples = new LinkedList<>();
+        installedApps = new LinkedList<String>();
+        populateInstalledApps();
+
         // Obtain the shared Tracker instance.
         AnalyticsApplication application = (AnalyticsApplication) getApplication();
         mTracker = application.getDefaultTracker();
@@ -121,100 +118,280 @@ public class DetectAppsService extends Service {
         final Handler h = new Handler();
         final int delay = 1000; //milliseconds
 
-        h.postDelayed(new Runnable(){
-            String lastApp = null;
-            Sample lastSample = null;
-            long lastSampledTime = 0;
-            String lastAppCategory;
-            long launchTime = System.currentTimeMillis();
-            boolean sampled = false;
-            Sample sample;
+        lastSampleType = PreferenceManager.getDefaultSharedPreferences(thisService).getInt("lastSampleType", -1);
+        String pastSample1 = PreferenceManager.getDefaultSharedPreferences(thisService).getString("pastSample1", "");
+        String pastSample2 = PreferenceManager.getDefaultSharedPreferences(thisService).getString("pastSample2", "");
+        String pastSample3 = PreferenceManager.getDefaultSharedPreferences(thisService).getString("pastSample3", "");
+        pastSamples.add(pastSample1);
+        pastSamples.add(pastSample2);
+        pastSamples.add(pastSample3);
+        Log.d("c", "past samples");
+        System.out.println(pastSamples);
 
-            public void run(){
-                AppChecker appChecker = new AppChecker();
-                String packageName = appChecker.getForegroundApp(getApplicationContext());
+        final AppChecker appChecker = new AppChecker();
+        appChecker.other(new AppChecker.Listener() {
+                             String lastApp = null;
+                             long lastSampledTime = 0;
+                             long launchTime = System.currentTimeMillis();
+                             boolean sampled = false;
+                             Sample sample;
 
-                //TODO: Change these back after testing
-                //If user just opened a target app
-                if (!packageName.equals(lastApp)) {
-                    if (targetApps.contains(packageName) && getAppCategory(packageName) != lastAppCategory && System.currentTimeMillis() - lastSampledTime > 1800000) {
+                             @Override
+                             public void onForeground(String packageName) {
 
-                        lastSampledTime = System.currentTimeMillis();
-                        lastAppCategory = getAppCategory(packageName);
+                    //If user just opened a target app
+                    if (!packageName.equals(lastApp)) {
+                        if (!pastSamples.contains(packageName) && installedApps.contains(packageName) && System.currentTimeMillis() - lastSampledTime > 1800000) {
 
-                        sample = Sample.getRandomSample(lastSample, packageName);
-                        Log.d("c", "sampled: "+sample.getType());
-                        currentSample = sample;
-                        lastSample = sample;
-                        sampledApp = packageName;
-                        sample.setPackageName(packageName);
+                            sample = Sample.getRandomSample(lastSampleType, packageName);
+                            //sample = new Sample(Sample.BEFORE, packageName);
+                            Log.d("c", "sampled: "+sample.getType());
+                            System.out.println(pastSamples);
+                            currentSample = sample;
+                            sampledApp = packageName;
+                            sample.setPackageName(packageName);
+                            cancelPrompt = true;
 
-                        if (sample.getType() == Sample.BEFORE) {
-                            sampled = true;
-                            popupSample(sample);
-                        }
-                        else {
-                            boolean continuousUse = true;
-                            int waitPeriod;
-
-                            if (sample.getType() == Sample.DURING) {
-                                waitPeriod = getRandom15and120();
+                            if (sample.getType() == Sample.BEFORE) {
+                                sampled = true;
+                                popupSample(sample);
+                                beginTimer();
+                                pastSamples.add(packageName);
+                                lastSampledTime = System.currentTimeMillis();
+                                lastSampleType = sample.getType();
                             }
                             else {
-                                waitPeriod = 15000;
-                            }
+                                boolean continuousUse = true;
+                                int waitPeriod;
 
-                            int waitedSoFar = 0;
-                            while (appChecker.getForegroundApp(getApplicationContext()).equals(packageName) && waitedSoFar < waitPeriod) {
-                                sleep(1000);
-                                waitedSoFar+=1000;
-                            }
-                            continuousUse = (waitedSoFar == waitPeriod);
-
-                            String currentApp = appChecker.getForegroundApp(getApplicationContext());
-                            if (currentApp.equals(packageName) && sample.getType() == Sample.DURING && continuousUse){
-                                sample.setSampleTime(waitPeriod);
-                                sampled = true;
-                                popupSample(sample);
-                            }
-                            else if (sample.getType() == Sample.AFTER && continuousUse) {
-                                int elapsed = 0;
-                                sampled = true;
-                                while (appChecker.getForegroundApp(getApplicationContext()).equals(packageName)) {
-                                    sleep(1000);
-                                    elapsed+=1000;
+                                if (sample.getType() == Sample.DURING) {
+                                    waitPeriod = getRandom15and120();
                                 }
-                                sample.setSampleTime(elapsed+15000);
-                                sample.setAppEnd(elapsed);
-                                popupSample(sample);
+                                else {
+                                    waitPeriod = 15000;
+                                }
+
+                                int waitedSoFar = 0;
+                                while (appChecker.getForegroundApp(getApplicationContext()).equals(packageName) && waitedSoFar < waitPeriod) {
+                                    sleep(1000);
+                                    waitedSoFar+=1000;
+                                }
+                                continuousUse = (waitedSoFar == waitPeriod);
+
+                                String currentApp = appChecker.getForegroundApp(getApplicationContext());
+                                if (currentApp.equals(packageName) && sample.getType() == Sample.DURING && continuousUse){
+                                    sample.setSampleTime(waitPeriod);
+                                    sampled = true;
+                                    popupSample(sample);
+                                    pastSamples.add(packageName);
+                                    beginTimer();
+                                    lastSampledTime = System.currentTimeMillis();
+                                    lastSampleType = sample.getType();
+                                }
+                                else if (sample.getType() == Sample.AFTER && continuousUse) {
+                                    int elapsed = 0;
+                                    sampled = true;
+                                    while (appChecker.getForegroundApp(getApplicationContext()).equals(packageName)) {
+                                        sleep(1000);
+                                        elapsed+=1000;
+                                    }
+                                    sample.setSampleTime(elapsed+15000);
+                                    sample.setAppEnd(elapsed);
+                                    popupSample(sample);
+                                    pastSamples.add(packageName);
+                                    beginTimer();
+                                    lastSampledTime = System.currentTimeMillis();
+                                    lastSampleType = sample.getType();
+                                }
+                            }
+                        }
+
+                        if (pastSamples.size() > 3) {
+                            pastSamples.remove(0);
+                        }
+
+                        long duration = System.currentTimeMillis() - launchTime;
+                        launchTime = System.currentTimeMillis();
+                        if (!launcherApps.contains(lastApp)) {
+                            if (sampled && sample.getType() != Sample.AFTER) {
+                                Event event = sample.getEvent();
+                                event.setDurationAfter(System.currentTimeMillis() - sample.getEndTime());
+                                sendEvent(thisService, sample.getCategory(), sample.getPromptType(), event);
+                                sampled = false;
+                                sample = null;
+                            }
+                            else if (!sampled && installedApps.contains(lastApp)) {
+                                Event event = new Event.EventBuilder(0, launchTime, DetectAppsService.getLocalDateTime(), lastApp)
+                                        .durationTotal(duration)
+                                        .build();
+                                sendEvent(getService(), "non-sample", "non-sample", event);
+                                sampled = false;
                             }
                         }
                     }
+                    lastApp = packageName;
+                                 // do something
+                             }
+                         }
+                    ).timeout(500).start(this);
 
+//        h.postDelayed(new Runnable(){
+//
+//
+//
+//            public void run(){
+//
+//                try {
+//                    AppChecker appChecker = new AppChecker();
+//                    String packageName = appChecker.getForegroundApp(getApplicationContext());
+//
+//                    //TODO: Change these back after testing
+//                    //If user just opened a target app
+//                    if (!packageName.equals(lastApp)) {
+//                        if (!pastSamples.contains(packageName) && installedApps.contains(packageName) && System.currentTimeMillis() - lastSampledTime > 1800000) {
+//                            //1800000
+//
+//                            sample = Sample.getRandomSample(lastSampleType, packageName);
+//                            //sample = new Sample(Sample.BEFORE, packageName);
+//                            Log.d("c", "sampled: "+sample.getType());
+//                            System.out.println(pastSamples);
+//                            currentSample = sample;
+//                            sampledApp = packageName;
+//                            sample.setPackageName(packageName);
+//                            cancelPrompt = true;
+//
+//                            if (sample.getType() == Sample.BEFORE) {
+//                                sampled = true;
+//                                popupSample(sample);
+//                                beginTimer();
+//                                pastSamples.add(packageName);
+//                                lastSampledTime = System.currentTimeMillis();
+//                                lastSampleType = sample.getType();
+//                            }
+//                            else {
+//                                boolean continuousUse = true;
+//                                int waitPeriod;
+//
+//                                if (sample.getType() == Sample.DURING) {
+//                                    waitPeriod = getRandom15and120();
+//                                }
+//                                else {
+//                                    waitPeriod = 15000;
+//                                }
+//
+//                                int waitedSoFar = 0;
+//                                while (appChecker.getForegroundApp(getApplicationContext()).equals(packageName) && waitedSoFar < waitPeriod) {
+//                                    sleep(1000);
+//                                    waitedSoFar+=1000;
+//                                }
+//                                continuousUse = (waitedSoFar == waitPeriod);
+//
+//                                String currentApp = appChecker.getForegroundApp(getApplicationContext());
+//                                if (currentApp.equals(packageName) && sample.getType() == Sample.DURING && continuousUse){
+//                                    sample.setSampleTime(waitPeriod);
+//                                    sampled = true;
+//                                    popupSample(sample);
+//                                    pastSamples.add(packageName);
+//                                    beginTimer();
+//                                    lastSampledTime = System.currentTimeMillis();
+//                                    lastSampleType = sample.getType();
+//                                }
+//                                else if (sample.getType() == Sample.AFTER && continuousUse) {
+//                                    int elapsed = 0;
+//                                    sampled = true;
+//                                    while (appChecker.getForegroundApp(getApplicationContext()).equals(packageName)) {
+//                                        sleep(1000);
+//                                        elapsed+=1000;
+//                                    }
+//                                    sample.setSampleTime(elapsed+15000);
+//                                    sample.setAppEnd(elapsed);
+//                                    popupSample(sample);
+//                                    pastSamples.add(packageName);
+//                                    beginTimer();
+//                                    lastSampledTime = System.currentTimeMillis();
+//                                    lastSampleType = sample.getType();
+//                                }
+//                            }
+//                        }
+//
+//                        if (pastSamples.size() > 3) {
+//                            pastSamples.remove(0);
+//                        }
+//
+//                        long duration = System.currentTimeMillis() - launchTime;
+//                        launchTime = System.currentTimeMillis();
+//                        if (!launcherApps.contains(lastApp)) {
+//                            if (sampled && sample.getType() != Sample.AFTER) {
+//                                Event event = sample.getEvent();
+//                                event.setDurationAfter(System.currentTimeMillis() - sample.getEndTime());
+//                                sendEvent(thisService, sample.getCategory(), sample.getPromptType(), event);
+//                                sampled = false;
+//                                sample = null;
+//                            }
+//                            else if (!sampled && installedApps.contains(lastApp)) {
+//                                Event event = new Event.EventBuilder(0, launchTime, DetectAppsService.getLocalDateTime(), lastApp)
+//                                        .durationTotal(duration)
+//                                        .build();
+//                                sendEvent(getService(), "non-sample", "non-sample", event);
+//                                sampled = false;
+//                            }
+//                        }
+//                    }
+//                    lastApp = packageName;
+//                    h.postDelayed(this, delay);
+//                }
+//                catch (Exception e) {
+//                    Log.d("c", "Exception Caught");
+//                }
+//            }
+//        }, delay);
 
-                    long duration = System.currentTimeMillis() - launchTime;
-                    launchTime = System.currentTimeMillis();
-                    if (!launcherApps.contains(lastApp)) {
-                        if (sampled && sample.getType() != Sample.AFTER) {
-                            Event event = sample.getEvent();
-                            event.setDurationAfter(System.currentTimeMillis() - sample.getEndTime());
-                            sendEvent(thisService, sample.getCategory(), sample.getPromptType(), event);
-                            sampled = false;
-                            sample = null;
-                        }
-                        else if (!sampled) {
-                            Event event = new Event.EventBuilder(0, launchTime, DetectAppsService.getLocalDateTime(), lastApp)
-                                    .durationTotal(duration)
-                                    .build();
-                            sendEvent(getService(), "non-sample", "non-sample", event);
-                            sampled = false;
-                        }
-                    }
-                }
-                lastApp = packageName;
-                h.postDelayed(this, delay);
+    }
+
+    private void populateInstalledApps() {
+        PackageManager pm = getPackageManager();
+        List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
+        for(ApplicationInfo packageInfo:packages){
+            if( pm.getLaunchIntentForPackage(packageInfo.packageName) != null ){
+                String currAppName = packageInfo.packageName;
+                installedApps.add(currAppName);
             }
-        }, delay);
+        }
+        installedApps.remove("com.uw.hcde.esm");
+        installedApps.remove("com.android.settings");
+    }
+
+    private void setAlarmManager() {
+        Intent intentAlarm = new Intent(this, SensorRestarterBroadcastReceiver.class);
+        AlarmManager alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent pi = PendingIntent.getBroadcast(this, 1, intentAlarm, PendingIntent.FLAG_UPDATE_CURRENT);
+        alarmManager.setRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime(), 1800000, pi);
+    }
+
+    private void beginTimer() {
+        Log.d("c", "timer begun");
+        cancelPromptHandler = new Handler();
+        cancelPromptRunnable = new cancelPromptCommand(this);
+        cancelPromptHandler.postDelayed(cancelPromptRunnable, 30000);
+    }
+
+    private class cancelPromptCommand implements Runnable {
+        DetectAppsService mService;
+        public cancelPromptCommand(DetectAppsService service) {
+            mService = service;
+        }
+        @Override
+        public void run() {
+            if (cancelPrompt && myLayout.getWindowToken() != null) {
+                mService.hide(true);
+            }
+        }
+    };
+
+    public void restartTimer() {
+        cancelPromptHandler.removeCallbacks(cancelPromptRunnable);
+        cancelPromptRunnable = new cancelPromptCommand(this);
+        cancelPromptHandler.postDelayed(cancelPromptRunnable, 30000);
     }
 
     public String getSampledApp() {
@@ -317,6 +494,15 @@ public class DetectAppsService extends Service {
         String code = prefs.getString(service.getString(R.string.invite_code), "NA");
         UUID deviceID = UUID.fromString(prefs.getString(getString(R.string.device_id), new UUID(0L, 0L).toString()));
 
+        PackageInfo pInfo = null;
+        try {
+            pInfo = service.getPackageManager().getPackageInfo(getPackageName(), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.d("c", "error: couldn't get package info");
+        }
+        int verCode = pInfo.versionCode;
+        event.setVersionCode(verCode);
+
         event.setPID(code);
         event.setDeviceId(deviceID);
 
@@ -339,30 +525,11 @@ public class DetectAppsService extends Service {
                 .build());
     }
 
-    public static String getAppCategory(String packageName) {
-        if (familyFriendsApps.contains(packageName)) {
-            return "family-friends";
-        }
-        else if (meetingPeopleApps.contains(packageName)) {
-            return "meeting-people";
-        }
-        else if (informationSeekingApps.contains(packageName)) {
-            return "info";
-        }
-        else if (entertainmentApps.contains(packageName)){
-            return "entertainment";
-        }
-        else {
-            return "unknown";
-        }
-    }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         Log.d("C", "STARTING SERVICE");
-        Toast.makeText(this, "Service Started!", Toast.LENGTH_SHORT).show();
-        //startForeground(FOREGROUND_ID, buildForegroundNotification());
+        startForeground(FOREGROUND_ID, buildForegroundNotification());
         return START_STICKY;
     }
 
@@ -370,9 +537,9 @@ public class DetectAppsService extends Service {
         NotificationCompat.Builder b=new NotificationCompat.Builder(this);
 
         b.setOngoing(true)
-                .setContentTitle("service active")
+                .setContentTitle("Study is running")
                 .setContentText("RightNow - UW study")
-                .setSmallIcon(R.drawable.logo)
+                .setSmallIcon(R.drawable.ic_action_tag_faces)
                 .setTicker("active");
 
         return(b.build());
@@ -380,10 +547,22 @@ public class DetectAppsService extends Service {
 
     @Override
     public void onDestroy() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor edit = prefs.edit();
+        edit.putInt("lastSampleType", lastSampleType);
+        edit.apply();
+        edit.putString("pastSample1", pastSamples.get(0));
+        edit.apply();
+        edit.putString("pastSample2", pastSamples.get(1));
+        edit.apply();
+        edit.putString("pastSample3", pastSamples.get(2));
+        edit.apply();
+
         Log.d("c", "service destroyed");
         super.onDestroy();
         instance = null;
         stopForeground(true);
+
         Intent broadcastIntent = new Intent("RestartSensor");
         sendBroadcast(broadcastIntent);
     }

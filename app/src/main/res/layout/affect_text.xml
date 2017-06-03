@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:layout_alignParentBottom="true"
     android:layout_margin="10dp"
-    android:background="@android:color/background_light"
+    android:background="@drawable/customborder"
     android:orientation="vertical"
     android:padding="0dp"
     android:weightSum="1">
@@ -26,6 +26,19 @@
         android:textStyle="bold" />
 
     <TextView
+        android:id="@+id/appNameBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#AED1FF"
+        android:gravity="start"
+        android:paddingLeft="10dp"
+        android:text="App Used:"
+        android:textAlignment="textStart"
+        android:textColor="@android:color/black"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -41,12 +54,12 @@
     <EditText
         android:id="@+id/editText"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="90dp"
         android:layout_gravity="start"
         android:layout_margin="10dp"
         android:ems="10"
         android:gravity="top|left"
-        android:hint="Answer (75 character minimum)"
+        android:hint="Answer (25 character minimum)"
         android:inputType="textMultiLine"
         android:padding="10dp"
         android:scrollHorizontally="false"

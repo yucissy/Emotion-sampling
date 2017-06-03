@@ -3,8 +3,10 @@ package com.uw.hcde.esm;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.ActivityManager;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.AppOpsManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -117,11 +119,11 @@ public class HomeScreenActivity extends AppCompatActivity {
         TextView subMessage = (TextView) findViewById(R.id.textView5);
         if (granted) {
             headMessage.setText("You're in the study!");
-            subMessage.setText("This app will prompt you to record your emotions throughout the day. \n\nPlease keep notifications turned on while you are awake, and keep this app running in the background.");
+            subMessage.setText("This app will prompt you to record your emotions throughout the day. \n\nPlease keep this app running. If it is running, you will see a notice in your notification drawer.");
 
             mDetectAppsService = new DetectAppsService();
             mServiceIntent = new Intent(this, DetectAppsService.class);
-            if (!isMyServiceRunning(mDetectAppsService.getClass())) {
+            if (!isMyServiceRunning(mDetectAppsService.getClass(), this)) {
                 startService(mServiceIntent);
             }
         }
@@ -132,8 +134,8 @@ public class HomeScreenActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+    public static boolean isMyServiceRunning(Class<?> serviceClass, Context context) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
             if (serviceClass.getName().equals(service.service.getClassName())) {
                 Log.i ("isMyServiceRunning?", true+"");

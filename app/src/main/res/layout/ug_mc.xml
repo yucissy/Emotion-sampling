@@ -44,7 +44,7 @@
         android:layout_height="wrap_content"
         android:background="#AED1FF"
         android:padding="20dp"
-        android:text="What best describes why you're using this app?"
+        android:text="Which of the following best describes the way you are using your phone right now?"
         android:textAlignment="center"
         android:textColor="@android:color/black"
         android:textSize="24sp"
@@ -62,56 +62,33 @@
             android:id="@+id/radio0"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@android:color/black"
             android:padding="10dp"
             android:paddingTop="10dp"
-            android:text="Communicating/interacting with other people"
-            android:textColor="@android:color/black" />
+            android:text="To achieve a specific goal"
+            android:textColor="@android:color/black"
+            android:textSize="20dp"
+            android:buttonTint="@android:color/black" />
 
         <RadioButton
             android:id="@+id/radio1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@android:color/black"
             android:padding="10dp"
-            android:text="Browsing social media without interacting with other people"
-            android:textColor="@android:color/black" />
+            android:text="To browse, explore, or pass the time"
+            android:textColor="@android:color/black"
+            android:textSize="20dp"
+            android:buttonTint="@android:color/black" />
 
         <RadioButton
             android:id="@+id/radio2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:buttonTint="@android:color/black"
-            android:padding="10dp"
-            android:text="Entertainment"
-            android:textColor="@android:color/black" />
-
-        <RadioButton
-            android:id="@+id/radio3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:buttonTint="@android:color/black"
-            android:padding="10dp"
-            android:text="Getting information"
-            android:textColor="@android:color/black" />
-
-        <RadioButton
-            android:id="@+id/radio4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:buttonTint="@android:color/black"
-            android:padding="10dp"
-            android:text="Getting things done or self-improvement"
-            android:textColor="@android:color/black" />
-
-        <RadioButton
-            android:id="@+id/radio5"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:buttonTint="@android:color/black"
             android:padding="10dp"
             android:text="Not sure"
-            android:textColor="@android:color/black" />
+            android:textColor="@android:color/black"
+            android:textSize="20dp"
+            android:buttonTint="@android:color/black" />
+
     </RadioGroup>
 
     <Button

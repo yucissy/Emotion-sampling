@@ -11,10 +11,10 @@ public class Event {
     private int type;
     private String PID;
     private UUID deviceId;
+    private int versionCode;
     private long timeStamp;
     private String localTime;
     private String app;
-    private String category;
     private String timing;
     private long durationBefore;
     private long sampleDuration;
@@ -24,7 +24,7 @@ public class Event {
     private String arousal;
     private String affectText;
     private String purpose;
-    private String closeness;
+    private String ugPurpose;
     private String meaningfulness;
     private String meaningfulnessText;
 
@@ -32,10 +32,10 @@ public class Event {
         this.type = builder.type;
         this.PID = builder.PID;
         this.deviceId = builder.deviceId;
+        this.versionCode = builder.versionCode;
         this.timeStamp = builder.timeStamp;
         this.localTime = builder.localTime;
         this.app = builder.app;
-        this.category = builder.category;
         this.timing = builder.timing;
         this.durationBefore = builder.durationBefore;
         this.sampleDuration = builder.sampleDuration;
@@ -45,7 +45,7 @@ public class Event {
         this.arousal = builder.arousal;
         this.affectText = builder.affectText;
         this.purpose = builder.purpose;
-        this.closeness = builder.closeness;
+        this.ugPurpose = builder.ugPurpose;
         this.meaningfulness = builder.meaningfulness;
         this.meaningfulnessText = builder.meaningfulnessText;
     }
@@ -64,6 +64,8 @@ public class Event {
         this.PID = PID;
     }
 
+    public void setVersionCode(int versionCode) { this.versionCode = versionCode; }
+
     public void setDeviceId(UUID deviceId) {
         this.deviceId = deviceId;
     }
@@ -74,7 +76,9 @@ public class Event {
 
     public void setMeaningfulnessText(String meaningfulnessText) { this.meaningfulnessText = meaningfulnessText; }
 
-    public void setCloseness(String closeness) { this.closeness = closeness; }
+    public void setUgPurpose(String ugPurpose) { this.ugPurpose = ugPurpose; }
+
+//    public void setCloseness(String closeness) { this.closeness = closeness; }
 
     public void setPurpose(String purpose) { this.purpose = purpose; }
 
@@ -91,10 +95,10 @@ public class Event {
         result += "type=" + ((this.type == -1) ? "NA" : this.type);
         result += ";PID=" + ((this.PID == null) ? "NA" : this.PID);
         result += ";device_ID=" + ((this.deviceId == null) ? "NA" : this.deviceId);
+        result += ";versionCode=" + ((this.versionCode == -1) ? "NA" : this.versionCode);
         result += ";timestamp=" + ((this.timeStamp == -1) ? "NA" : this.timeStamp);
         result += ";localtime=" + ((this.localTime == null) ? "NA" : this.localTime);
         result += ";app=" + ((this.app == null) ? "NA" : this.app);
-        result += ";category=" + ((this.category == null) ? "NA" : this.category);
         result += ";timing=" + ((this.timing == null) ? "NA" : this.timing);
         result += ";duration_before=" + ((this.durationBefore == -1) ? "NA" : this.durationBefore);
         result += ";sample_duration=" + ((this.sampleDuration == -1) ? "NA" : this.sampleDuration);
@@ -103,8 +107,8 @@ public class Event {
         result += ";valence=" + ((this.valence == null) ? "NA" : this.valence);
         result += ";arousal=" + ((this.arousal == null) ? "NA" : this.arousal);
         result += ";affect_text=" + ((this.affectText == null) ? "NA" : this.affectText);
+        result += ";ugPurpose=" + ((this.ugPurpose == null) ? "NA" : this.ugPurpose);
         result += ";purpose=" + ((this.purpose == null) ? "NA" : this.purpose);
-        result += ";closeness=" + ((this.closeness == null) ? "NA" : this.closeness);
         result += ";meaningfulness=" + ((this.meaningfulness == null) ? "NA" : this.meaningfulness);
         result += ";meaningfulness_text=" + ((this.meaningfulnessText == null) ? "NA" : this.meaningfulnessText);
 
@@ -117,10 +121,10 @@ public class Event {
         protected int type;
         protected String PID;
         protected UUID deviceId;
+        protected int versionCode = -1;
         protected long timeStamp;
         protected String localTime;
         protected String app;
-        protected String category;
         protected String timing;
         protected long durationBefore = -1;
         protected long sampleDuration = -1;
@@ -129,8 +133,8 @@ public class Event {
         protected String valence;
         protected String arousal;
         protected String affectText;
+        protected String ugPurpose;
         protected String purpose;
-        protected String closeness;
         protected String meaningfulness;
         protected String meaningfulnessText;
 
@@ -139,11 +143,6 @@ public class Event {
             this.timeStamp = timeStamp;
             this.app = app;
             this.localTime = localTime;
-        }
-
-        public EventBuilder category(String category) {
-            this.category = category;
-            return this;
         }
 
         public EventBuilder timing(String timing) {
@@ -188,11 +187,6 @@ public class Event {
 
         public EventBuilder purpose(String purpose) {
             this.purpose = purpose;
-            return this;
-        }
-
-        public EventBuilder closeness(String closeness) {
-            this.closeness = closeness;
             return this;
         }
 

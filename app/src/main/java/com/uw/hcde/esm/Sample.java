@@ -2,9 +2,15 @@ package com.uw.hcde.esm;
 
 import android.app.Service;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.provider.MediaStore;
+import android.text.Editable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -37,7 +43,6 @@ public class Sample {
     public Sample(int type, String appName) {
         this.type = type;
         this.event = new Event.EventBuilder(1, System.currentTimeMillis(), DetectAppsService.getLocalDateTime(), appName)
-                .category(DetectAppsService.getAppCategory(appName))
                 .timing(this.getCategory())
                 .build();
     }
@@ -76,12 +81,23 @@ public class Sample {
 
     public int getSampleTime() { return this.sampleTime; }
 
-    public static Sample getRandomSample(Sample lastSample, String appName) {
+    public static String getAppNameFromPackageName(Service service, String packageName) {
+        final PackageManager pm = service.getPackageManager();
+        ApplicationInfo ai;
+        try {
+            ai = pm.getApplicationInfo( packageName, 0);
+        } catch (final PackageManager.NameNotFoundException e) {
+            ai = null;
+        }
+        return (String) (ai != null ? pm.getApplicationLabel(ai) : "(unknown)");
+    }
+
+    public static Sample getRandomSample(int lastSample, String appName) {
 
         List<Integer> sampleTypes = Arrays.asList(Sample.BEFORE, Sample.DURING, Sample.AFTER);
         int lastSampleType = 3;
-        if (lastSample != null) {
-            lastSampleType = lastSample.getType();
+        if (lastSample != -1) {
+            lastSampleType = lastSample;
         }
 
         int selectedType = lastSampleType;
@@ -98,6 +114,10 @@ public class Sample {
         final Sample thisSample = this;
         LayoutInflater li = (LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final LinearLayout popup = (LinearLayout) li.inflate(R.layout.affect_before, null);
+
+        TextView appNameBox = (TextView) popup.findViewById(R.id.appNameBox);
+        appNameBox.setText("App Name: " + getAppNameFromPackageName(service, this.getPackageName()));
+
         TextView prompt = (TextView) popup.findViewById(R.id.textView);
         final SpannableStringBuilder str;
         this.sampleStartTime = System.currentTimeMillis();
@@ -122,6 +142,7 @@ public class Sample {
                 prompt.setText(null);
         }
         this.setPromptType("affect_scale");
+
         Button submit = (Button) popup.findViewById(R.id.btnSubmit);
 
         submit.setOnClickListener(new View.OnClickListener() {
@@ -166,20 +187,36 @@ public class Sample {
                             public void onClick(View v) {
                                 String response = answer.getText().toString();
                                 event.setAffectText(response);
-                                if (response.length() >= 75) {
+                                if (response.length() >= 25) {
                                     //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";response="+answer.getText()+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
                                     service.removeView(followUp);
-                                    final View followUp = thisSample.getPurpose(service);
+                                    final View followUp = thisSample.getUGPrompt(service);
                                     service.addView(followUp);
-                                    thisSample.setPromptType("purpose_mc");
+                                    thisSample.setPromptType("ug_mc");
                                 }
+                            }
+                        });
+
+                        answer.addTextChangedListener ( new TextWatcher() {
+
+                            public void afterTextChanged ( Editable s ) {
+
+                            }
+
+                            public void beforeTextChanged ( CharSequence s, int start, int count, int after ) {
+
+                            }
+
+                            public void onTextChanged ( CharSequence s, int start, int before, int count ) {
+                                Log.d("c", "touch");
+                                service.restartTimer();
                             }
                         });
                     }
                     else {
-                        final View followUp = thisSample.getPurpose(service);
+                        final View followUp = thisSample.getUGPrompt(service);
                         service.addView(followUp);
-                        thisSample.setPromptType("purpose_mc");
+                        thisSample.setPromptType("ug_mc");
                     }
                 }
             }
@@ -187,13 +224,72 @@ public class Sample {
         return popup;
     }
 
+    public View getUGPrompt(final DetectAppsService service) {
+        final Sample thisSample = this;
+        LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final LinearLayout popup = (LinearLayout) li.inflate(R.layout.ug_mc, null);
 
+        TextView appNameBox = (TextView) popup.findViewById(R.id.appNameBox);
+        appNameBox.setText("App Name: " + getAppNameFromPackageName(service, this.getPackageName()));
+
+        TextView prompt = (TextView) popup.findViewById(R.id.textView);
+        final SpannableStringBuilder str;
+
+        switch (this.getType()) {
+            case BEFORE:
+                str = new SpannableStringBuilder("Which of the following best describes the way you are using your phone right now?");
+                str.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 71, 79, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prompt.setText(str);
+                break;
+            case DURING:
+                str = new SpannableStringBuilder("Which of the following best describes the way you are using your phone right now?");
+                str.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 71, 79, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prompt.setText(str);
+                break;
+            case AFTER:
+                str = new SpannableStringBuilder("Which of the following best describes the way you used your phone just now?");
+                str.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 66, 73, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prompt.setText(str);
+                break;
+            default:
+                prompt.setText(null);
+        }
+
+
+        Button submit = (Button) popup.findViewById(R.id.btnSubmit);
+
+        submit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RadioGroup mGroup = (RadioGroup) popup.findViewById(R.id.purpose_group);
+                int checkedM = mGroup.getCheckedRadioButtonId();
+
+                if (checkedM >= 0) {
+                    RadioButton radioButton = (RadioButton) mGroup.findViewById(checkedM);
+                    String purpose = radioButton.getText().toString();
+
+                    service.removeView(popup);
+                    event.setUgPurpose(purpose);
+
+                    final View followUp = thisSample.getPurpose(service);
+                    service.addView(followUp);
+                    thisSample.setPromptType("purpose_mc");
+                }
+            }
+        });
+        return popup;
+    }
 
     public View getFollowUp(final DetectAppsService service) {
         final Sample thisSample = this;
         LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final LinearLayout popup = (LinearLayout) li.inflate(R.layout.affect_text, null);
+
+        TextView appNameBox = (TextView) popup.findViewById(R.id.appNameBox);
+        appNameBox.setText("App Name: " + getAppNameFromPackageName(service, this.getPackageName()));
+
         TextView prompt = (TextView) popup.findViewById(R.id.textView);
+
         switch(this.getType()) {
             case BEFORE:
                 prompt.setText("Why do you think you were feeling this way?");
@@ -214,6 +310,47 @@ public class Sample {
         final Sample thisSample = this;
         LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final LinearLayout popup = (LinearLayout) li.inflate(R.layout.purpose_mc, null);
+
+        TextView appNameBox = (TextView) popup.findViewById(R.id.appNameBox);
+        appNameBox.setText("App Name: " + getAppNameFromPackageName(service, this.getPackageName()));
+
+        TextView prompt = (TextView) popup.findViewById(R.id.textView);
+        final SpannableStringBuilder str;
+
+        switch (this.getType()) {
+            case BEFORE:
+                str = new SpannableStringBuilder("What best describes how you're using this app right now?");
+                str.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 45, 54, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prompt.setText(str);
+                break;
+            case DURING:
+                str = new SpannableStringBuilder("What best describes how you're using this app right now?");
+                str.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 45, 54, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prompt.setText(str);
+                break;
+            case AFTER:
+                str = new SpannableStringBuilder("What best describes how you used this app just now?");
+                str.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 41, 49, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prompt.setText(str);
+                break;
+            default:
+                prompt.setText(null);
+        }
+
+        SpannableStringBuilder mc;
+        RadioButton communicatingBox = (RadioButton) popup.findViewById(R.id.radio0);
+        mc = new SpannableStringBuilder("Communicating/interacting with other people");
+        mc.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 26, 30, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        communicatingBox.setText(mc);
+
+        RadioButton browsingBox = (RadioButton) popup.findViewById(R.id.radio1);
+        mc = new SpannableStringBuilder("Browsing social media without interacting with other people");
+        mc.setSpan(new android.text.style.StyleSpan(Typeface.ITALIC), 22, 29, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        browsingBox.setText(mc);
+
+
+
+
         Button submit = (Button) popup.findViewById(R.id.btnSubmit);
 
         submit.setOnClickListener(new View.OnClickListener() {
@@ -221,69 +358,73 @@ public class Sample {
             public void onClick(View v) {
                 RadioGroup mGroup = (RadioGroup) popup.findViewById(R.id.purpose_group);
                 int checkedM = mGroup.getCheckedRadioButtonId();
-                RadioButton radioButton = (RadioButton) mGroup.findViewById(checkedM);
-                String purpose = radioButton.getText().toString();
 
-                //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";purpose="+purpose+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
-                service.removeView(popup);
-                event.setPurpose(purpose);
+                if (checkedM >= 0) {
+                    RadioButton radioButton = (RadioButton) mGroup.findViewById(checkedM);
+                    String purpose = radioButton.getText().toString();
 
-                if (purpose.equals("Communicating / interacting")) {
-                    final View closenessFollowUp = thisSample.getCloseness(service);
-                    service.addView(closenessFollowUp);
-                    thisSample.setPromptType("closeness_scale");
-                }
-                else if (thisSample.getType() == Sample.AFTER) {
-                    final View meaningfulnessFollowUp = thisSample.getMeaningfulnessLikert(service);
-                    service.addView(meaningfulnessFollowUp);
-                    thisSample.setPromptType("meaningfulness_scale");
-                }
-                else {
-                    sampleEndTime = System.currentTimeMillis();
-                    event.setSampleDuration(sampleEndTime - sampleStartTime);
-                    endPrompts(service);
+                    //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";purpose="+purpose+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
+                    service.removeView(popup);
+                    event.setPurpose(purpose);
+
+                    if (thisSample.getType() == Sample.AFTER) {
+                        final View meaningfulnessFollowUp = thisSample.getMeaningfulnessLikert(service);
+                        service.addView(meaningfulnessFollowUp);
+                        thisSample.setPromptType("meaningfulness_scale");
+                    }
+                    else {
+                        sampleEndTime = System.currentTimeMillis();
+                        event.setSampleDuration(sampleEndTime - sampleStartTime);
+                        endPrompts(service);
+                    }
                 }
             }
         });
         return popup;
     }
-
-    public View getCloseness(final DetectAppsService service) {
-        final Sample thisSample = this;
-        LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        final LinearLayout popup = (LinearLayout) li.inflate(R.layout.closeness_scale, null);
-        Button submit = (Button) popup.findViewById(R.id.btnSubmit);
-
-        submit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                RadioGroup mGroup = (RadioGroup) popup.findViewById(R.id.closeness_group);
-                int checkedM = mGroup.getCheckedRadioButtonId();
-                RadioButton radioButton = (RadioButton) mGroup.findViewById(checkedM);
-                int idx = mGroup.indexOfChild(radioButton);
-                //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";closeness="+idx+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
-                event.setCloseness(Integer.toString(idx));
-                service.removeView(popup);
-                if (thisSample.getType() == Sample.AFTER) {
-                    final View meaningfulnessFollowUp = thisSample.getMeaningfulnessLikert(service);
-                    service.addView(meaningfulnessFollowUp);
-                    thisSample.setPromptType("meaningfulness_scale");
-                }
-                else {
-                    sampleEndTime = System.currentTimeMillis();
-                    event.setSampleDuration(sampleEndTime - sampleStartTime);
-                    endPrompts(service);
-                }
-            }
-        });
-        return popup;
-    }
+//
+//    public View getCloseness(final DetectAppsService service) {
+//        final Sample thisSample = this;
+//        LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+//        final LinearLayout popup = (LinearLayout) li.inflate(R.layout.closeness_scale, null);
+//        Button submit = (Button) popup.findViewById(R.id.btnSubmit);
+//
+//        submit.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                RadioGroup mGroup = (RadioGroup) popup.findViewById(R.id.closeness_group);
+//                int checkedM = mGroup.getCheckedRadioButtonId();
+//
+//                if (checkedM >= 0) {
+//                    RadioButton radioButton = (RadioButton) mGroup.findViewById(checkedM);
+//                    int idx = mGroup.indexOfChild(radioButton);
+//                    //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";closeness="+idx+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
+//                    event.setCloseness(Integer.toString(idx));
+//                    service.removeView(popup);
+//                    if (thisSample.getType() == Sample.AFTER) {
+//                        final View meaningfulnessFollowUp = thisSample.getMeaningfulnessLikert(service);
+//                        service.addView(meaningfulnessFollowUp);
+//                        thisSample.setPromptType("meaningfulness_scale");
+//                    }
+//                    else {
+//                        sampleEndTime = System.currentTimeMillis();
+//                        event.setSampleDuration(sampleEndTime - sampleStartTime);
+//                        endPrompts(service);
+//                    }
+//                }
+//            }
+//        });
+//        return popup;
+//    }
 
     public View getMeaningfulnessLikert(final DetectAppsService service) {
         final Sample thisSample = this;
         LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final LinearLayout popup = (LinearLayout) li.inflate(R.layout.meaningfulness_scale, null);
         TextView prompt = (TextView) popup.findViewById(R.id.textView);
+
+        TextView appNameBox = (TextView) popup.findViewById(R.id.appNameBox);
+        appNameBox.setText("App Name: " + getAppNameFromPackageName(service, this.getPackageName()));
 
         prompt.setText("You just used "+service.getSampledApp()+".\n\nHow much do you feel like you have spent your time on something meaningful?");
 
@@ -314,7 +455,7 @@ public class Sample {
                         @Override
                         public void onClick(View v) {
                             String response = answer.getText().toString();
-                            if (response.length() >= 75) {
+                            if (response.length() >= 25) {
                                 //DetectAppsService.sendEvent(service, thisSample.getCategory(), thisSample.getPromptType(), ";response="+answer.getText()+";app="+thisSample.getPackageName()+";duration="+thisSample.getSampleTime());
                                 service.removeView(followUp);
                                 event.setMeaningfulnessText(response);
@@ -322,6 +463,22 @@ public class Sample {
                                 event.setSampleDuration(sampleEndTime - sampleStartTime);
                                 endPrompts(service);
                             }
+                        }
+                    });
+
+                    answer.addTextChangedListener ( new TextWatcher() {
+
+                        public void afterTextChanged ( Editable s ) {
+
+                        }
+
+                        public void beforeTextChanged ( CharSequence s, int start, int count, int after ) {
+
+                        }
+
+                        public void onTextChanged ( CharSequence s, int start, int before, int count ) {
+                            Log.d("c", "touch");
+                            service.restartTimer();
                         }
                     });
                 }
@@ -339,14 +496,18 @@ public class Sample {
         final Sample thisSample = this;
         LayoutInflater li=(LayoutInflater) service.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         final LinearLayout popup = (LinearLayout) li.inflate(R.layout.meaningfulness_text, null);
+
+        TextView appNameBox = (TextView) popup.findViewById(R.id.appNameBox);
+        appNameBox.setText("App Name: " + getAppNameFromPackageName(service, this.getPackageName()));
+
         return popup;
     }
 
     private void endPrompts(DetectAppsService service) {
         this.showFinalToast(service);
-        if (this.getType() == AFTER) {
-            service.sendEvent(service, this.getCategory(), this.getPromptType(), this.event);
-        }
+        //if (this.getType() == AFTER) {
+        service.sendEvent(service, this.getCategory(), this.getPromptType(), this.event);
+        //}
     }
 
     public void setAppEnd(long duration) {
@@ -375,11 +536,11 @@ public class Sample {
             case "affect_text":
                 event.setAffectText(none);
                 break;
+            case "ug_mc":
+                event.setUgPurpose(none);
+                break;
             case "purpose_mc":
                 event.setPurpose(none);
-                break;
-            case "closeness_scale":
-                event.setCloseness(none);
                 break;
             case "meaningfulness_scale":
                 event.setMeaningfulness(none);
