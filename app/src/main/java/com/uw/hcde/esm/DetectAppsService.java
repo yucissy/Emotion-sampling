@@ -140,7 +140,7 @@ public class DetectAppsService extends Service {
                              public void onForeground(String packageName) {
 
                     //If user just opened a target app
-                    if (!packageName.equals(lastApp)) {
+                    if (packageName != null && !packageName.equals(lastApp)) {
                         if (!pastSamples.contains(packageName) && installedApps.contains(packageName) && System.currentTimeMillis() - lastSampledTime > 1800000) {
 
                             sample = Sample.getRandomSample(lastSampleType, packageName);
